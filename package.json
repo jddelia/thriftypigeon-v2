@@ -10,6 +10,8 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.901.0",
+    "@aws-sdk/s3-request-presigner": "^3.901.0",
     "drizzle-orm": "^0.44.6",
     "groq": "^4.10.2",
     "next": "^14.2.13",

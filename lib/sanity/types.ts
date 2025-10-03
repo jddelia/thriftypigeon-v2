@@ -59,4 +59,5 @@ export interface PlaybookContent {
     answer: PortableTextBlock[];
   }>;
   lemonsqueezyVariantId: string;
+  fileKey?: string | null;
 }

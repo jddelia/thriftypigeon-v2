@@ -7,3 +7,6 @@
 - Added provider adapters for Lemon Squeezy, Resend email, R2 storage, and database access layers using Drizzle + Postgres.
 - Established site-wide layout components and placeholder content to enable fast iteration.
 - Pending: wire real database tables, implement webhook normalization, secure download validation, and connect Turnstile + ESP integrations.
+- Implemented production-ready Lemon Squeezy webhook handling with signature validation, order persistence, secure fulfillment emails, and R2-backed download links.
+- Hardened `/api/download` by verifying paid orders, sanitizing file keys, and issuing signed URLs via Cloudflare R2 using AWS SDK presigners.
+- Added database helpers for upserting orders, tracking fulfillment state, and marking deliveries without requiring a live connection in non-production environments.

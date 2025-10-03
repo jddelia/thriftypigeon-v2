@@ -6,8 +6,7 @@ const runtimeEnvSchema = z.object({
 
 const checkoutEnvSchema = z.object({
   LEMONSQUEEZY_API_KEY: z.string().min(1, "Set LEMONSQUEEZY_API_KEY"),
-  LEMONSQUEEZY_STORE_ID: z
-    .coerce
+  LEMONSQUEEZY_STORE_ID: z.coerce
     .number()
     .int()
     .positive("LEMONSQUEEZY_STORE_ID must be a positive integer"),
@@ -59,6 +58,15 @@ export async function createCheckoutSession(
   }
 
   const env = readLemonSqueezyCheckoutEnv();
+  const checkoutData: Record<string, unknown> = {};
+
+  if (payload.email) {
+    checkoutData.email = payload.email;
+  }
+
+  if (payload.metadata && Object.keys(payload.metadata).length > 0) {
+    checkoutData.custom = payload.metadata;
+  }
 
   const response = await fetch("https://api.lemonsqueezy.com/v1/checkouts", {
     method: "POST",
@@ -76,6 +84,7 @@ export async function createCheckoutSession(
             media: false,
           },
           expires_at: new Date(Date.now() + 15 * 60 * 1000).toISOString(),
+          ...(Object.keys(checkoutData).length > 0 ? { checkout_data: checkoutData } : {}),
         },
         relationships: {
           store: {

@@ -64,6 +64,7 @@ async function handleCheckout(input: z.infer<typeof payloadSchema>) {
       email,
       metadata: {
         playbookSlug: playbook.slug,
+        ...(playbook.fileKey ? { fileKey: playbook.fileKey } : {}),
       },
     });
 

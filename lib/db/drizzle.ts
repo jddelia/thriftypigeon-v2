@@ -1,5 +1,20 @@
-import { drizzle } from "drizzle-orm/node-postgres";
+import { drizzle, type NodePgDatabase } from "drizzle-orm/node-postgres";
 
 import { getDbPool } from "./client";
 
-export const db = drizzle(getDbPool());
+let cachedDb: NodePgDatabase | null = null;
+
+export function getDb(): NodePgDatabase | null {
+  if (cachedDb) {
+    return cachedDb;
+  }
+
+  const pool = getDbPool();
+
+  if (!pool) {
+    return null;
+  }
+
+  cachedDb = drizzle(pool);
+  return cachedDb;
+}

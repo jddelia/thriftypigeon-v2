@@ -8,6 +8,9 @@ export const orders = pgTable("orders", {
   playbookSlug: text("playbook_slug").notNull(),
   status: text("status").notNull(),
   total: text("total").notNull(),
+  currency: text("currency"),
+  downloadKey: text("download_key"),
+  fulfillmentSentAt: timestamp("fulfillment_sent_at"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
