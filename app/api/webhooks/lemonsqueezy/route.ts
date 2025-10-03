@@ -94,7 +94,7 @@ function normalizeOrderPayload(payload: z.infer<typeof webhookSchema>): Normaliz
   const variantRelationship = payload.data.relationships?.variant?.data?.id;
   const variantId = attributes.variant_id
     ? attributes.variant_id.toString()
-    : variantRelationship ?? "";
+    : (variantRelationship ?? "");
 
   if (!variantId) {
     throw new Error("Missing variant identifier");

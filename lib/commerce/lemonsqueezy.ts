@@ -6,8 +6,7 @@ const runtimeEnvSchema = z.object({
 
 const checkoutEnvSchema = z.object({
   LEMONSQUEEZY_API_KEY: z.string().min(1, "Set LEMONSQUEEZY_API_KEY"),
-  LEMONSQUEEZY_STORE_ID: z
-    .coerce
+  LEMONSQUEEZY_STORE_ID: z.coerce
     .number()
     .int()
     .positive("LEMONSQUEEZY_STORE_ID must be a positive integer"),
@@ -85,9 +84,7 @@ export async function createCheckoutSession(
             media: false,
           },
           expires_at: new Date(Date.now() + 15 * 60 * 1000).toISOString(),
-          ...(Object.keys(checkoutData).length > 0
-            ? { checkout_data: checkoutData }
-            : {}),
+          ...(Object.keys(checkoutData).length > 0 ? { checkout_data: checkoutData } : {}),
         },
         relationships: {
           store: {

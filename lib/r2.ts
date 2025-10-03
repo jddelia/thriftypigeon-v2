@@ -45,8 +45,7 @@ export async function createSignedDownload({
     throw new Error("createSignedDownload requires an object key");
   }
 
-  const fallbackBaseUrl =
-    process.env.R2_PUBLIC_DOMAIN ?? "https://r2.thethriftypigeon.test";
+  const fallbackBaseUrl = process.env.R2_PUBLIC_DOMAIN ?? "https://r2.thethriftypigeon.test";
   const expiresAt = new Date(Date.now() + expiresInSeconds * 1000).toISOString();
 
   const envResult = r2EnvSchema.safeParse(process.env);
