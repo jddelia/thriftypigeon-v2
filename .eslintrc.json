@@ -1,0 +1,14 @@
+{
+  "extends": ["next", "next/core-web-vitals"],
+  "rules": {
+    "react/jsx-sort-props": "error",
+    "sort-imports": [
+      "error",
+      {
+        "ignoreCase": true,
+        "ignoreDeclarationSort": true,
+        "allowSeparatedGroups": true
+      }
+    ]
+  }
+}
