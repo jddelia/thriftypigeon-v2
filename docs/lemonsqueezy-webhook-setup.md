@@ -74,21 +74,26 @@ LEMONSQUEEZY_WEBHOOK_SECRET=your_signing_secret_here
 
 1. In your Lemon Squeezy dashboard, ensure you're in **Test Mode** (toggle in top-right)
 2. Create a test product/variant if you haven't already
-3. Trigger a test purchase:
+3. Ensure you have a playbook in Sanity with:
+   - A `slug` field (e.g., "first-dollar-playbook")
+   - A `lemonsqueezyVariantId` field set to your test variant ID
+4. Trigger a test purchase:
    ```bash
-   # Use your product variant ID
+   # Use your playbook slug from Sanity
    curl -X POST http://localhost:3000/api/checkout \
      -H "Content-Type: application/json" \
      -d '{
-       "variantId": "YOUR_VARIANT_ID",
-       "email": "test@example.com",
-       "metadata": {
-         "playbookSlug": "test-playbook"
-       }
+       "slug": "your-playbook-slug",
+       "email": "test@example.com"
      }'
    ```
-4. Complete the checkout in the returned URL
-5. Check your terminal for webhook logs:
+
+   Or test with a GET request in your browser:
+   ```
+   http://localhost:3000/api/checkout?slug=your-playbook-slug&email=test@example.com
+   ```
+5. Complete the checkout in the returned URL
+6. Check your terminal for webhook logs:
    ```
    Received Lemon Squeezy webhook { event: 'order_created', orderId: '123', status: 'pending' }
    ```

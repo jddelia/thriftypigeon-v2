@@ -1,0 +1,17 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(pip3 install:*)",
+      "Bash(python3:*)",
+      "Bash(source:*)",
+      "Bash(pip install:*)",
+      "WebSearch",
+      "WebFetch(domain:docs.lemonsqueezy.com)",
+      "Bash(curl \"https://api.lemonsqueezy.com/v1/variants?filter[product_id]=655472\" )",
+      "Bash(curl:*)",
+      "Bash(lsof:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}
