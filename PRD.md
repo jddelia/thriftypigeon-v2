@@ -4,7 +4,7 @@
 
 A fast, editorially credible blog about saving + making money, with premium Playbooks (PDF blueprints). Playbooks will sometimes appear in certain blog posts and match specific content of list item, and provide a detailed and comprehensive plan. Content lives in Sanity, the site runs on Next.js.
 
-**The Thrifty Pigeon** uses **Sanity** for content, **Lemon Squeezy** for commerce (MVP), and **Cloudflare + self‑hosted on Hetzner** for delivery. It’s engineered to ship fast **and** scale cleanly—no dead ends.
+**The Thrifty Pigeon** uses **Sanity** for content, **Stripe** for commerce, and **Cloudflare + self‑hosted on Hetzner** for delivery. It’s engineered to ship fast **and** scale cleanly—no dead ends.
 
 ---
 
@@ -12,7 +12,7 @@ A fast, editorially credible blog about saving + making money, with premium Play
 
 * **Frontend/App**: **Next.js (App Router, Node 20)**
 * **Content**: **Sanity v3** (+ Visual Editing/Preview)
-* **Commerce**: **Lemon Squeezy** (merchant‑of‑record) via a clean **Provider Adapter** so Stripe/Gumroad can be added later with no rewrites
+* **Commerce**: **Stripe Checkout** via a clean **Provider Adapter** so future providers can be added with minimal rewrites
 * **Infra**: **Hetzner Cloud VM** (Docker) + **Cloudflare Tunnel** (no public ports) + **Cloudflare WAF/CDN/Turnstile**
 * **Storage**: **Cloudflare R2 (private)** for PDFs, delivered via **short‑lived signed URLs**
 * **DB**: **Postgres (Neon)** + **Drizzle** (own your Orders/Subscribers)
@@ -30,7 +30,7 @@ A fast, editorially credible blog about saving + making money, with premium Play
 **Goals**
 
 * Publish Sanity‑managed articles with instant preview and near‑instant publish to production (ISR + webhooks).
-* Sell 1+ **Playbook** via **Lemon Squeezy** with zero checkout friction.
+* Sell 1+ **Playbook** via **Stripe Checkout** with zero checkout friction.
 * Fulfill securely: **email + expiring signed download link** backed by R2.
 * Build & own the **order ledger** and **subscriber list** in Postgres.
 * Baseline anti‑abuse (Turnstile + WAF + rate‑limits) and full observability.
@@ -57,13 +57,13 @@ A fast, editorially credible blog about saving + making money, with premium Play
 * **Home**: brand promise, featured playbook, latest posts, newsletter capture
 * **Post**: long‑form (Sanity Portable Text) with **inline CTA** and footer CTA
 * **(Optional) Playbook landing**: “What’s inside”, FAQ, price, single **Buy** button
-* **Thank‑you**: purchase confirmation (LS will also send theirs)
+* **Thank‑you**: purchase confirmation (Stripe can also send theirs)
 * **Legal**: Terms, Privacy, Refunds, Disclosures (YMYL/affiliate)
 
 ### Commerce & Fulfillment
 
-* **Checkout**: Lemon Squeezy overlay/buy link via **/api/checkout** (server‑created)
-* **Webhook**: LS → `/api/webhooks/lemonsqueezy` → normalized **Order** row
+* **Checkout**: Stripe Checkout Session via **/api/checkout** (server‑created)
+* **Webhook**: Stripe → `/api/webhooks/stripe` → normalized **Order** row
 * **Delivery**: email with link to `/api/download?order=...&file=...` → server validates → **R2 signed URL (10 min)**
 
 ### Newsletter
@@ -131,7 +131,7 @@ External managed services:
 * **Framework**: Next.js (App Router), TypeScript, Node 20
 * **Content**: Sanity v3 + `next-sanity` + Visual Editing/Preview
 * **Styling**: Tailwind CSS + Radix UI + accessible custom components
-* **Payments**: Lemon Squeezy SDK/API (overlay or new checkout session)
+* **Payments**: Stripe Checkout Sessions via official API
 * **DB**: Postgres (Neon) + Drizzle ORM + migrations in repo
 * **Storage**: Cloudflare R2 (S3 API) private bucket
 * **Email**: Resend (transactional); Buttondown or ConvertKit (newsletter) via **adapter**
@@ -152,13 +152,13 @@ External managed services:
 **Documents**
 
 * `post`: title, slug, excerpt, cover, body (Portable Text), authors[], tags[], publishAt, SEO, **ctaBlocks[]**
-* `playbook`: title, slug, excerpt, cover, **sku**, **fileKey**, **defaultProvider="lemonsqueezy"**, `providerData` (LS product/variant IDs/permalink), “what’s inside”, FAQ[], version, lastUpdated, SEO
+* `playbook`: title, slug, excerpt, cover, **sku**, **fileKey**, **defaultProvider="stripe"**, `providerData` (Stripe price IDs/metadata), “what’s inside”, FAQ[], version, lastUpdated, SEO
 * `ctaBlock`: type (hero/inline/footer), copy, bullets, playbook ref, style
 * `author`, `tag`, `newsletterIssue` (optional archive)
 
 **Notes**
 
-* Store **LS product/variant** identifier(s) here; the app calls `/api/checkout` with the `sku` and reads LS config from Sanity.
+* Store **Stripe price** identifier(s) here; the app calls `/api/checkout` with the `slug` and reads pricing config from Sanity.
 
 ---
 
@@ -169,7 +169,7 @@ External managed services:
 id (pk), email (unique), created_at
 
 // orders (normalized)
-id (pk), customer_id (fk), provider ('lemonsqueezy'),
+id (pk), customer_id (fk), provider ('stripe'),
 provider_customer_id, provider_order_id (unique),
 product_sku, amount_cents, currency, status ('succeeded'|'refunded'|'failed'),
 receipt_url, created_at
@@ -193,13 +193,13 @@ id (pk), provider, event_id (unique), event_type, received_at, payload_hash
 ## 8) API Contracts
 
 **POST `/api/checkout`**
-Req: `{ sku: string; email?: string; successUrl: string; cancelUrl: string }`
-Res: `{ url: string }` (Lemon Squeezy checkout)
+Req: `{ slug: string; email?: string }`
+Res: `{ id: string; url: string; expiresAt: string }` (Stripe Checkout Session)
 Guards: Turnstile (token), rate‑limit (5/min/IP)
 
-**POST `/api/webhooks/lemonsqueezy`**
+**POST `/api/webhooks/stripe`**
 Headers: signature (verify), Raw body: required
-Behavior: upsert customer, insert order (idempotent on `event_id`/`provider_order_id`), queue **sendDownloadEmail(orderId)**
+Behavior: upsert customer, insert order (idempotent on `checkout_session_id`), queue **sendDownloadEmail(orderId)**
 
 **GET `/api/download?order=...&file=...`**
 Auth: verify order belongs to file (by `product_sku → file_key`) and `status='succeeded'`
@@ -221,12 +221,12 @@ Source: ESP → reflect unsub/bounce → update our `subscribers`
 
 ---
 
-## 9) Lemon Squeezy integration (MVP details)
+## 9) Stripe integration (MVP details)
 
-* Use LS **Buy Button / Checkout** for speed; populate from `playbook.providerData`.
-* Webhooks to capture: `order_created`, `order_refunded` (ignore “failed” unless you want analytics).
-* You **own the receipt+download email**: send your branded email with your **/api/download** link (LS will also send theirs; acceptable redundancy).
-* **Idempotency**: store LS `event_id` and `order_id`; reject duplicates.
+* Use Stripe **Checkout Sessions**; populate price IDs from `playbook.providerData`.
+* Webhooks to capture: `checkout.session.completed` (add refunds/expired events later if needed).
+* You **own the receipt+download email**: send your branded email with your **/api/download** link (Stripe also emails receipts if enabled).
+* **Idempotency**: store Stripe `event.id` and Checkout Session `id`; reject duplicates.
 
 ---
 
@@ -292,7 +292,7 @@ Performance budgets: LCP < 2.5s, CLS < 0.1, TTI < 3.5s on mid‑tier mobile.
 * **Sentry** (frontend & server) with release names and sourcemaps.
 * **Structured JSON logs** (pino) shipped to **Better Stack/Logtail**.
 * Health endpoint `/api/health` for Coolify to probe.
-* Weekly cron (Cloudflare Cron calling a public endpoint) to reconcile LS → our ledger (paranoid check).
+* Weekly cron (Cloudflare Cron calling a public endpoint) to reconcile Stripe → our ledger (paranoid check).
 
 ---
 
@@ -312,7 +312,7 @@ Performance budgets: LCP < 2.5s, CLS < 0.1, TTI < 3.5s on mid‑tier mobile.
 ## 16) Acceptance Criteria (MVP)
 
 * **Publishing**: Create/edit in Sanity; preview works; publish visible **<60s**.
-* **Checkout**: From CTA click → LS checkout → success → order row in DB; **email sent <60s**.
+* **Checkout**: From CTA click → Stripe checkout → success → order row in DB; **email sent <60s**.
 * **Download**: Link works on mobile/desktop; expires gracefully; logs `downloads`.
 * **Newsletter**: Double opt‑in flow succeeds; ESP shows subscriber; unsubscribe syncs back.
 * **Perf/SEO**: Correct meta + schema; sitemap, robots; LCP < 2.5s.
@@ -332,20 +332,20 @@ Performance budgets: LCP < 2.5s, CLS < 0.1, TTI < 3.5s on mid‑tier mobile.
     /subscribe/page.tsx
     /subscribe/confirm/page.tsx
   /api
-    /checkout/route.ts               # LS checkout init
-    /webhooks/lemonsqueezy/route.ts  # verify -> order -> email
+    /checkout/route.ts               # Stripe checkout init
+    /webhooks/stripe/route.ts        # verify -> order -> email
     /download/route.ts               # validate -> R2 signed URL
     /preview/route.ts
     /revalidate/route.ts
 
-/lib
-  /sanity/{client,queries,types}.ts
-  /lemonsqueezy.ts
-  /r2.ts
-  /email.ts
-  /db/{client,drizzle,schemas}.ts
-  /rateLimit.ts
-  /analytics.ts
+  /lib
+    /sanity/{client,queries,types}.ts
+    /commerce/stripe.ts
+    /r2.ts
+    /email.ts
+    /db/{client,drizzle,schemas}.ts
+    /rateLimit.ts
+    /analytics.ts
 
 /sanity   # Sanity Studio (protected)
 
@@ -357,8 +357,8 @@ Performance budgets: LCP < 2.5s, CLS < 0.1, TTI < 3.5s on mid‑tier mobile.
 ## 18) Strong opinions (so you don’t stall)
 
 * **Use Cloudflare Tunnel**. Do **not** expose origin ports; skip NGINX unless you need mTLS.
-* **Own** Orders & Subscribers in Postgres even if LS stores them—portability matters.
-* **Self‑host downloads** in R2; LS can also host, but your flow stays consistent across providers.
+* **Own** Orders & Subscribers in Postgres even if Stripe stores them—portability matters.
+* **Self‑host downloads** in R2; Stripe can also host files, but your flow stays consistent across providers.
 * **Sanity** drives pricing/IDs via `playbook.providerData`; checkout code never touches constants.
 * Start with **Buttondown** for newsletters (fastest dev); keep adapter so ConvertKit is a 1‑file swap.
 * **No accounts** in MVP. If/when you add a Library, your storage and ledger are already ready.

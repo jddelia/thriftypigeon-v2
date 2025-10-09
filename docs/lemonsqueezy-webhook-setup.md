@@ -1,4 +1,7 @@
-# Lemon Squeezy Webhook Setup Guide
+# Lemon Squeezy Webhook Setup Guide (Archived)
+
+> [!IMPORTANT]
+> Lemon Squeezy is currently paused in favor of Stripe. The instructions below are retained for historical context only and should not be used for new environments. Refer to `docs/stripe-webhook-setup.md` for the active payment flow.
 
 This guide walks you through setting up Lemon Squeezy webhooks for local development and production.
 
@@ -214,5 +217,5 @@ Recommended workflow for testing payments locally:
 
 - [Lemon Squeezy Webhooks Docs](https://docs.lemonsqueezy.com/guides/developer-guide/webhooks)
 - [ngrok Documentation](https://ngrok.com/docs)
-- Webhook handler code: `/app/api/webhooks/lemonsqueezy/route.ts`
-- Lemon Squeezy client: `/lib/commerce/lemonsqueezy.ts`
+- Webhook handler code: `/app/api/webhooks/lemonsqueezy/route.ts` (removed in favor of Stripe)
+- Lemon Squeezy client: `/lib/commerce/lemonsqueezy.ts` (removed in favor of Stripe)

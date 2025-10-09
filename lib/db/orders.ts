@@ -8,7 +8,7 @@ export type OrderRecord = typeof orders.$inferSelect;
 export interface UpsertOrderInput {
   orderId: string;
   email: string;
-  variantId: string;
+  providerId: string;
   playbookSlug: string;
   status: string;
   total: string;
@@ -40,7 +40,7 @@ export async function upsertOrder(input: UpsertOrderInput): Promise<OrderRecord 
   const values = {
     orderId: input.orderId,
     email: input.email,
-    variantId: input.variantId,
+    providerId: input.providerId,
     playbookSlug: input.playbookSlug,
     status: input.status,
     total: input.total,

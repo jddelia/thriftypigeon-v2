@@ -5,7 +5,7 @@ This guide walks you through setting up and using Sanity CMS for The Thrifty Pig
 ## Overview
 
 Sanity is the content management system (CMS) and source of truth for:
-- **Playbooks**: Product catalog with pricing, descriptions, Lemon Squeezy variant IDs, and file keys
+- **Playbooks**: Product catalog with pricing, descriptions, Stripe price IDs, and file keys
 - **Posts**: Blog articles with rich text content and optional playbook CTAs
 - **Authors**: Author profiles for blog attribution
 - **Tags**: Categorization for posts
@@ -52,20 +52,18 @@ If you still see "No document types", restart the Sanity dev server.
 
 A playbook is required to test the full checkout and webhook flow.
 
-### 1. Create a Product in Lemon Squeezy
+### 1. Create a Product in Stripe
 
-First, set up the product in Lemon Squeezy:
+First, set up the product in Stripe:
 
-1. Go to [Lemon Squeezy Dashboard](https://app.lemonsqueezy.com/)
-2. Switch to **Test Mode** (toggle in top-right)
-3. Navigate to **Products**
-4. Click **"+ New Product"**
-5. Fill in:
+1. Go to the [Stripe Dashboard](https://dashboard.stripe.com/)
+2. Ensure you're in **Test mode** (toggle in the left navigation)
+3. Navigate to **Products** and click **Add product**
+4. Fill in:
    - **Name**: e.g., "Your First Dollar Playbook"
    - **Description**: Brief description
-   - **Price**: e.g., $29
-6. After creating, go to the product's **Variants** tab
-7. **Copy the Variant ID** (looks like a number, e.g., `123456`)
+5. Under **Pricing**, create a one-time price (e.g., $29) and save
+6. Copy the generated **Price ID** (looks like `price_1234abcd`)
 
 ### 2. Upload PDF to Cloudflare R2 (Optional for MVP)
 
@@ -84,9 +82,9 @@ If you have a PDF ready:
    - **Title**: "Your First Dollar Playbook"
    - **Slug**: Click "Generate" to auto-generate from title
    - **Summary**: Short 1-2 sentence description
-   - **Price**: `29` (should match Lemon Squeezy)
+   - **Price**: `29` (should match Stripe)
    - **Description**: Rich text editor - add detailed "what's inside" content
-   - **Lemon Squeezy Variant ID**: Paste the variant ID from step 1 (e.g., `123456`)
+   - **Stripe Price ID**: Paste the Price ID from step 1 (e.g., `price_1234abcd`)
    - **File Key**: `playbooks/first-dollar-v1.pdf` (if you uploaded a PDF)
    - **FAQ** (optional): Add Q&A pairs
 4. Click **"Publish"**
@@ -104,7 +102,7 @@ You should get a response with a checkout URL:
 
 ```json
 {
-  "url": "https://checkout.lemonsqueezy.com/buy/...",
+  "url": "https://checkout.stripe.com/c/pay/...",
   "expiresAt": "2025-10-07T22:30:00.000Z"
 }
 ```
@@ -159,7 +157,7 @@ You should get a response with a checkout URL:
 | `summary` | Text | Yes | Short description (1-2 sentences) |
 | `price` | Number | Yes | Price in USD |
 | `description` | Rich Text | No | Detailed "what's inside" content |
-| `lemonsqueezyVariantId` | String | Yes | Lemon Squeezy variant ID |
+| `stripePriceId` | String | Yes | Stripe price identifier |
 | `fileKey` | String | No | R2 storage key for PDF |
 | `faq` | Array | No | Array of Q&A objects |
 
@@ -181,23 +179,23 @@ You should get a response with a checkout URL:
 ### Testing Checkout Flow
 
 1. Create/update a playbook in Sanity
-2. Ensure `lemonsqueezyVariantId` matches a test variant in Lemon Squeezy
+2. Ensure `stripePriceId` matches a test price in Stripe
 3. Test the checkout endpoint:
    ```bash
    curl -X POST http://localhost:3000/api/checkout \
      -H "Content-Type: application/json" \
      -d '{"slug": "your-playbook-slug", "email": "test@example.com"}'
    ```
-4. Complete the test purchase in Lemon Squeezy
+4. Complete the test purchase in Stripe Checkout
 5. Verify webhook processing in your server logs
 
 ### Updating Playbook Pricing
 
-1. Update price in Lemon Squeezy dashboard first
+1. Update price in Stripe dashboard first
 2. Update the `price` field in Sanity to match
 3. Publish changes in Sanity
 
-The app will use the Lemon Squeezy price for actual checkout, but displays the Sanity price on the website.
+The app will use the Stripe price for actual checkout, but displays the Sanity price on the website.
 
 ### Adding File Keys for Fulfillment
 
@@ -253,7 +251,7 @@ Keep these tokens secure and never commit them to git.
 
 ### Webhook Not Finding Playbook Data
 
-**Cause**: `playbookSlug` metadata not being passed to Lemon Squeezy or missing from order.
+**Cause**: `playbookSlug` metadata not being passed to Stripe Checkout or missing from the saved order.
 
 **Solution**:
 1. Ensure checkout flow passes `playbookSlug` in metadata (already implemented in `/api/checkout/route.ts`)
@@ -265,7 +263,7 @@ Keep these tokens secure and never commit them to git.
 After setting up your Sanity content:
 
 1. **Test the full flow**: Checkout → Webhook → Email fulfillment
-2. **Add more playbooks**: Create additional products in Lemon Squeezy and Sanity
+2. **Add more playbooks**: Create additional products in Stripe and Sanity
 3. **Create blog posts**: Build out your content library
 4. **Set up preview mode**: Enable draft preview for editorial workflow (see Next.js docs)
 

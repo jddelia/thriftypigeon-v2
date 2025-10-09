@@ -4,7 +4,7 @@ export const orders = pgTable("orders", {
   id: serial("id").primaryKey(),
   orderId: text("order_id").notNull().unique(),
   email: text("email").notNull(),
-  variantId: text("variant_id").notNull(),
+  providerId: text("provider_id").notNull(),
   playbookSlug: text("playbook_slug").notNull(),
   status: text("status").notNull(),
   total: text("total").notNull(),
