@@ -44,13 +44,13 @@ export default defineType({
       name: 'providerData',
       title: 'Provider Data',
       type: 'object',
-      description: 'Payment provider configuration (Lemon Squeezy)',
+      description: 'Payment provider configuration (Stripe)',
       fields: [
         {
-          name: 'variantId',
-          title: 'Variant ID',
+          name: 'priceId',
+          title: 'Stripe Price ID',
           type: 'string',
-          description: 'The variant ID from Lemon Squeezy',
+          description: 'The price_xxx identifier from Stripe',
           validation: (Rule) => Rule.required(),
         },
       ],

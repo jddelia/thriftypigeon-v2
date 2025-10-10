@@ -68,7 +68,7 @@ const playbookQuery = groq`*[_type == "playbook" && slug.current == $slug][0] {
     "question": question,
     "answer": answer
   },
-  "lemonsqueezyVariantId": providerData.variantId,
+  "stripePriceId": providerData.priceId,
   "fileKey": fileKey
 }`;
 

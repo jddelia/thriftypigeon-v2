@@ -58,6 +58,6 @@ export interface PlaybookContent {
     question: string;
     answer: PortableTextBlock[];
   }>;
-  lemonsqueezyVariantId: string;
+  stripePriceId: string;
   fileKey?: string | null;
 }

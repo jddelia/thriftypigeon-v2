@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 
-import { createCheckoutSession } from "@/lib/commerce/lemonsqueezy";
+import { createCheckoutSession } from "@/lib/commerce/stripe";
 import { getPlaybook } from "@/lib/sanity/queries";
 
 const payloadSchema = z.object({
@@ -37,6 +37,7 @@ export async function GET(request: Request) {
 
   if (sessionResponse.status === 201) {
     const session = (await sessionResponse.json()) as {
+      id: string;
       url: string;
       expiresAt: string;
     };
@@ -54,13 +55,13 @@ async function handleCheckout(input: z.infer<typeof payloadSchema>) {
     return NextResponse.json({ error: "Playbook not found" }, { status: 404 });
   }
 
-  if (!playbook.lemonsqueezyVariantId) {
+  if (!playbook.stripePriceId) {
     return NextResponse.json({ error: "Playbook is not ready for checkout" }, { status: 409 });
   }
 
   try {
     const session = await createCheckoutSession({
-      variantId: playbook.lemonsqueezyVariantId,
+      priceId: playbook.stripePriceId,
       email,
       metadata: {
         playbookSlug: playbook.slug,
